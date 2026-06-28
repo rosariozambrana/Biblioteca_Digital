@@ -1,0 +1,109 @@
+# ============================================================
+#  Biblioteca Digital — desarrollo local
+# ------------------------------------------------------------
+#  Infraestructura:
+#    - NATS       → broker de mensajería entre los servicios
+#    - PostgreSQL → base de datos compartida (tablas: books,
+#                   loans, notifications)
+#
+#  Servicios:
+#    - catalog       → HTTP (puerto 3000)
+#    - loans         → worker NATS
+#    - notifications → worker NATS
+# ============================================================
+
+name: biblioteca-digital
+
+services:
+
+  # ----------------------------------------------------------
+  # Infraestructura
+  # ----------------------------------------------------------
+  nats:
+    image: nats:2.10-alpine
+    container_name: nats-broker
+    restart: unless-stopped
+    ports:
+      - "4222:4222"   # Puerto de clientes
+      - "8222:8222"   # Monitoreo: http://localhost:8222
+    command:
+      - "-js"
+      - "-m"
+      - "8222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:8222/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: biblioteca
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d biblioteca"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ----------------------------------------------------------
+  # Microservicios
+  # ----------------------------------------------------------
+  catalog:
+    build:
+      context: .
+      dockerfile: apps/catalog/Dockerfile
+    container_name: catalog
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      CATALOG_HTTP_PORT: 3000
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/biblioteca
+      NATS_URL: nats://nats:4222
+    depends_on:
+      nats:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  loans:
+    build:
+      context: .
+      dockerfile: apps/loans/Dockerfile
+    container_name: loans
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/biblioteca
+      NATS_URL: nats://nats:4222
+    depends_on:
+      nats:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  notifications:
+    build:
+      context: .
+      dockerfile: apps/notifications/Dockerfile
+    container_name: notifications
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/biblioteca
+      NATS_URL: nats://nats:4222
+    depends_on:
+      nats:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

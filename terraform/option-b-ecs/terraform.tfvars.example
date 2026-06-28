@@ -1,0 +1,21 @@
+# Copiar a `terraform.tfvars` y completar.
+# terraform.tfvars está en .gitignore.
+
+aws_region   = "us-east-1"
+project_name = "biblioteca-digital"
+image_tag    = "latest"
+
+# Credenciales AWS (o usar variables de entorno / aws configure)
+# access_key = "AKIA...REEMPLAZAR..."
+# secret_key = "...REEMPLAZAR..."
+
+# Base de datos RDS PostgreSQL
+db_username       = "postgres"
+db_password       = "REEMPLAZAR_PASSWORD_SEGURA"
+db_name           = "biblioteca"
+db_instance_class = "db.t3.micro"
+
+# Escalado de servicios ECS
+catalog_desired_count       = 1
+loans_desired_count         = 1
+notifications_desired_count = 1
