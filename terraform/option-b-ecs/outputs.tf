@@ -19,7 +19,7 @@ output "ecr_notifications_repository_url" {
 }
 
 output "ecr_login_command" {
-  description = "Comando para autenticar Docker contra ECR."
+  description = "comando para autenticar Docker contra ECR."
   value       = "aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${local.ecr_registry}"
 }
 
