@@ -101,3 +101,9 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t3.micro"
 }
+#falta crear el ACM desde la cuenta de aws que se va usar
+variable "acm_certificate_arn" {
+  description = "ARN del certificado SSL de ACM para el ALB (HTTPS)."
+  type        = string
+}
+

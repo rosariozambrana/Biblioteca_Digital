@@ -13,8 +13,11 @@ locals {
   account_id          = data.aws_caller_identity.current.account_id
   ecr_registry        = "${local.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
   catalog_image       = "${aws_ecr_repository.catalog.repository_url}:${var.image_tag}"
-  # COMPAÑEROS: Faltan variables locales aquí (loans_image, database_url)
+  loans_image         = "${aws_ecr_repository.loans.repository_url}:${var.image_tag}"
   notifications_image = "${aws_ecr_repository.notifications.repository_url}:${var.image_tag}"
+
+  # COMPAÑEROS: Se agregó loans_image y database_url para todos los microservicios
+  database_url        = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
 
   nats_dns_url = "nats://nats.${aws_service_discovery_private_dns_namespace.main.name}:4222"
 }
@@ -88,7 +91,7 @@ resource "aws_ecs_task_definition" "catalog" {
     ]
     environment = [
       { name = "NATS_URL",          value = local.nats_dns_url },
-      # COMPAÑEROS: Falta la variable de entorno para la Base de Datos
+      { name = "DATABASE_URL",      value = local.database_url },
       { name = "CATALOG_HTTP_PORT", value = "3000" }
     ]
     logConfiguration = {
@@ -128,7 +131,53 @@ resource "aws_ecs_service" "catalog" {
   depends_on = [aws_lb_listener.http]
 }
 
-# COMPAÑEROS: Falta la definición y el servicio ECS para el microservicio "loans"
+# ------------------------------------------------------------------
+# loans (worker NATS)
+# ------------------------------------------------------------------
+resource "aws_ecs_task_definition" "loans" {
+  family                   = "${var.project_name}-loans"
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = aws_iam_role.task_execution.arn
+
+  container_definitions = jsonencode([{
+    name      = "loans"
+    image     = local.loans_image
+    essential = true
+    environment = [
+      { name = "NATS_URL",     value = local.nats_dns_url },
+      { name = "DATABASE_URL", value = local.database_url }
+    ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.loans.name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "loans"
+      }
+    }
+  }])
+}
+
+resource "aws_ecs_service" "loans" {
+  name            = "loans"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.loans.arn
+  desired_count   = var.loans_desired_count
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = aws_subnet.public[*].id
+    security_groups  = [aws_security_group.loans.id]
+    assign_public_ip = true
+  }
+
+  service_registries {
+    registry_arn = aws_service_discovery_service.loans.arn
+  }
+}
 
 # ------------------------------------------------------------------
 # notifications (worker)
@@ -147,7 +196,7 @@ resource "aws_ecs_task_definition" "notifications" {
     essential = true
     environment = [
       { name = "NATS_URL",     value = local.nats_dns_url },
-      # COMPAÑEROS: Falta la variable de entorno para la Base de Datos
+      { name = "DATABASE_URL", value = local.database_url }
     ]
     logConfiguration = {
       logDriver = "awslogs"

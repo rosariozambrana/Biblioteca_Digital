@@ -26,13 +26,13 @@ resource "aws_security_group" "catalog" {
   description = "Permite trafico solo desde el ALB hacia catalog:3000"
   vpc_id      = aws_vpc.main.id
 
-  ingress {
-    description     = "HTTP desde ALB"
-    from_port       = 3000
-    to_port         = 3000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
+ingress {
+  description = "Tráfico desde ALB hacia Catalog"
+  from_port   = 3000
+  to_port     = 3000
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+}
 
   egress {
     from_port   = 0
