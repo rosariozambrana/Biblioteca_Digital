@@ -7,6 +7,9 @@ terraform {
       version = "~> 5.60"
     }
   }
+
+  # 🔹 Backend remoto en S3
+  backend "s3" {}
 }
 
 provider "aws" {
