@@ -28,7 +28,12 @@ resource "aws_ecr_repository" "notifications" {
   }
 }
 
+# Bloque agregado para que outputs.tf pueda usar local.ecr_registry
+data "aws_caller_identity" "current" {}
+
 locals {
+  ecr_registry = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
+
   ecr_lifecycle_policy = jsonencode({
     rules = [{
       rulePriority = 1

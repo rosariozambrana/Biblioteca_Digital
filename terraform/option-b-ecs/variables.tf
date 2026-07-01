@@ -4,20 +4,6 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-variable "access_key" {
-  description = "AWS access key."
-  type        = string
-  sensitive   = true
-  default     = null
-}
-
-variable "secret_key" {
-  description = "AWS secret key."
-  type        = string
-  sensitive   = true
-  default     = null
-}
-
 variable "project_name" {
   description = "Prefijo para nombrar todos los recursos."
   type        = string
@@ -101,9 +87,8 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t3.micro"
 }
-#falta crear el ACM desde la cuenta de aws que se va usar
+
 variable "acm_certificate_arn" {
   description = "ARN del certificado SSL de ACM para el ALB (HTTPS)."
   type        = string
 }
-

@@ -11,6 +11,14 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "HTTPS desde internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -23,16 +31,8 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "catalog" {
   name        = "${var.project_name}-catalog-sg"
-  description = "Permite trafico solo desde el ALB hacia catalog:3000"
+  description = "Permite tráfico solo desde el ALB hacia catalog:3000"
   vpc_id      = aws_vpc.main.id
-
-ingress {
-  description = "Tráfico desde ALB hacia Catalog"
-  from_port   = 3000
-  to_port     = 3000
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
-}
 
   egress {
     from_port   = 0
@@ -42,6 +42,16 @@ ingress {
   }
 
   tags = { Name = "${var.project_name}-catalog-sg" }
+}
+
+# 🔹 Ajuste implementado: regla de ingreso desde ALB hacia Catalog
+resource "aws_vpc_security_group_ingress_rule" "catalog_from_alb" {
+  security_group_id            = aws_security_group.catalog.id
+  referenced_security_group_id = aws_security_group.alb.id
+  ip_protocol                  = "tcp"
+  from_port                    = 3000
+  to_port                      = 3000
+  description                  = "Tráfico desde ALB hacia Catalog"
 }
 
 resource "aws_security_group" "loans" {

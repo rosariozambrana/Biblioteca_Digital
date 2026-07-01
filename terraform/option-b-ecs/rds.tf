@@ -15,10 +15,10 @@ resource "aws_security_group" "rds" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "PostgreSQL from ECS"
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
+    description    = "PostgreSQL from ECS"
+    from_port      = 5432
+    to_port        = 5432
+    protocol       = "tcp"
     security_groups = [aws_security_group.ecs.id] # este SG lo definiremos en security_groups.tf
   }
 
@@ -52,7 +52,14 @@ resource "aws_db_instance" "postgres" {
   deletion_protection     = false
   publicly_accessible     = false
 
+  # 🔹 Implementado: parámetros adicionales de buenas prácticas
+  backup_retention_period = 7   # Retiene backups automáticos por 7 días
+  multi_az                = false # En desarrollo lo dejamos en false, en producción conviene true
+  auto_minor_version_upgrade = true # Aplica upgrades menores automáticamente
+  monitoring_interval      = 60  # CloudWatch Enhanced Monitoring cada 60s
+
   tags = {
     Name = "${var.project_name}-rds"
+    Environment = "dev"
   }
 }

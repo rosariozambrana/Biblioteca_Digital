@@ -33,15 +33,19 @@ resource "aws_lb_target_group" "catalog" {
   }
 }
 
-# Listener HTTP (puerto 80)
+# Listener HTTP (puerto 80) con redirección a HTTPS
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.catalog.arn
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }
 
