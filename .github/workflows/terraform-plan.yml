@@ -6,7 +6,7 @@ name: Terraform Plan
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop]
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-plan.yml'
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # 🔹 Adaptado a tu proyecto biblioteca-digital
+  # 🔹 Adaptado a tu proyecto biblioteca-digitall
   TF_WORKING_DIR: terraform/option-b-ecs
   TF_STATE_KEY: biblioteca-digital/terraform.tfstate
   TF_LOCK_TABLE: biblioteca-digital-tflock
