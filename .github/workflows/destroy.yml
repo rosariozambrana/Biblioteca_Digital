@@ -11,7 +11,7 @@
 #
 # Adaptado al proyecto biblioteca-digital:
 #   - Microservicios: catalog, loans, notifications
-#   - State remoto: bucket y tabla DynamoDB con prefijo biblioteca-digital
+#   - State remoto: bucket y tabla DynamoDB con prefijo biblioteca-digital.
 
 name: Destroy AWS infrastructure
 
@@ -83,7 +83,7 @@ jobs:
             -backend-config="dynamodb_table=${TF_LOCK_TABLE}" \
             -backend-config="encrypt=true"
 
-      # 🔹 Adaptado: vaciar repositorios ECR de biblioteca-digital
+      # Adaptado: vaciar repositorios ECR de biblioteca-digital
       - name: Empty ECR repositories
         run: |
           set -euo pipefail

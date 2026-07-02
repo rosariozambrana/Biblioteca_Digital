@@ -1,10 +1,10 @@
 resource "aws_security_group" "alb" {
   name        = "${var.project_name}-alb-sg"
-  description = "Permite HTTP entrante desde internet hacia el ALB"
+  description = "Allow HTTP/HTTPS inbound from internet to ALB"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "HTTP desde internet"
+    description = "HTTP from internet"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -12,7 +12,7 @@ resource "aws_security_group" "alb" {
   }
 
   ingress {
-    description = "HTTPS desde internet"
+    description = "HTTPS from internet"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -31,7 +31,7 @@ resource "aws_security_group" "alb" {
 
 resource "aws_security_group" "catalog" {
   name        = "${var.project_name}-catalog-sg"
-  description = "Permite tráfico solo desde el ALB hacia catalog:3000"
+  description = "Allow traffic only from ALB to catalog:3000"
   vpc_id      = aws_vpc.main.id
 
   egress {
@@ -50,12 +50,12 @@ resource "aws_vpc_security_group_ingress_rule" "catalog_from_alb" {
   ip_protocol                  = "tcp"
   from_port                    = 3000
   to_port                      = 3000
-  description                  = "Tráfico desde ALB hacia Catalog"
+  description                  = "Traffic from ALB to Catalog"
 }
 
 resource "aws_security_group" "loans" {
   name        = "${var.project_name}-loans-sg"
-  description = "loans no acepta entrante (microservicio NATS puro)"
+  description = "Loans service does not accept inbound (NATS only)"
   vpc_id      = aws_vpc.main.id
 
   egress {
@@ -70,7 +70,7 @@ resource "aws_security_group" "loans" {
 
 resource "aws_security_group" "notifications" {
   name        = "${var.project_name}-notifications-sg"
-  description = "notifications no acepta entrante (microservicio NATS puro)"
+  description = "Notifications service does not accept inbound (NATS only)"
   vpc_id      = aws_vpc.main.id
 
   egress {
@@ -85,7 +85,7 @@ resource "aws_security_group" "notifications" {
 
 resource "aws_security_group" "nats" {
   name        = "${var.project_name}-nats-sg"
-  description = "Broker NATS: ingreso solo desde catalog, loans y notifications"
+  description = "NATS broker: inbound only from catalog, loans, notifications"
   vpc_id      = aws_vpc.main.id
 
   egress {
@@ -104,7 +104,7 @@ resource "aws_vpc_security_group_ingress_rule" "nats_from_catalog" {
   ip_protocol                  = "tcp"
   from_port                    = 4222
   to_port                      = 4222
-  description                  = "NATS desde catalog"
+  description                  = "NATS from catalog"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "nats_from_loans" {
@@ -113,7 +113,7 @@ resource "aws_vpc_security_group_ingress_rule" "nats_from_loans" {
   ip_protocol                  = "tcp"
   from_port                    = 4222
   to_port                      = 4222
-  description                  = "NATS desde loans"
+  description                  = "NATS from loans"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "nats_from_notifications" {
@@ -122,5 +122,5 @@ resource "aws_vpc_security_group_ingress_rule" "nats_from_notifications" {
   ip_protocol                  = "tcp"
   from_port                    = 4222
   to_port                      = 4222
-  description                  = "NATS desde notifications"
+  description                  = "NATS from notifications"
 }
