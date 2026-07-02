@@ -1,3 +1,7 @@
+# ------------------------------------------------------------
+# RDS PostgreSQL
+# ------------------------------------------------------------
+
 # Subnet group para RDS (usa las subnets privadas)
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-db-subnet-group"
@@ -8,18 +12,24 @@ resource "aws_db_subnet_group" "main" {
   }
 }
 
-# Security group para RDS (solo acceso desde ECS tasks)
+# Security Group para RDS
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
-  description = "Permite acceso a PostgreSQL desde ECS"
+  description = "Permite acceso a PostgreSQL desde los microservicios ECS"
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description    = "PostgreSQL from ECS"
-    from_port      = 5432
-    to_port        = 5432
-    protocol       = "tcp"
-    security_groups = [aws_security_group.ecs.id] # este SG lo definiremos en security_groups.tf
+    description = "PostgreSQL desde Catalog"
+
+    from_port = 5432
+    to_port   = 5432
+    protocol  = "tcp"
+
+    security_groups = [
+      aws_security_group.catalog.id,
+      aws_security_group.loans.id,
+      aws_security_group.notifications.id
+    ]
   }
 
   egress {
@@ -34,32 +44,37 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# Instancia RDS PostgreSQL
+# Instancia PostgreSQL
 resource "aws_db_instance" "postgres" {
-  identifier              = "${var.project_name}-db"
-  engine                  = "postgres"
-  engine_version          = "15.5"
-  instance_class          = var.db_instance_class
-  allocated_storage       = 20
-  max_allocated_storage   = 100
-  db_name                 = var.db_name
-  username                = var.db_username
-  password                = var.db_password
-  port                    = 5432
-  vpc_security_group_ids  = [aws_security_group.rds.id]
-  db_subnet_group_name    = aws_db_subnet_group.main.name
-  skip_final_snapshot     = true
-  deletion_protection     = false
-  publicly_accessible     = false
+  identifier            = "${var.project_name}-db"
+  engine                = "postgres"
+  engine_version        = "15.5"
+  instance_class        = var.db_instance_class
+  allocated_storage     = 20
+  max_allocated_storage = 100
 
-  # 🔹 Implementado: parámetros adicionales de buenas prácticas
-  backup_retention_period = 7   # Retiene backups automáticos por 7 días
-  multi_az                = false # En desarrollo lo dejamos en false, en producción conviene true
-  auto_minor_version_upgrade = true # Aplica upgrades menores automáticamente
-  monitoring_interval      = 60  # CloudWatch Enhanced Monitoring cada 60s
+  db_name  = var.db_name
+  username = var.db_username
+  password = var.db_password
+
+  port = 5432
+
+  vpc_security_group_ids = [
+    aws_security_group.rds.id
+  ]
+
+  db_subnet_group_name = aws_db_subnet_group.main.name
+
+  publicly_accessible         = false
+  skip_final_snapshot         = true
+  deletion_protection         = false
+  backup_retention_period     = 7
+  multi_az                    = false
+  auto_minor_version_upgrade  = true
+  monitoring_interval         = 60
 
   tags = {
-    Name = "${var.project_name}-rds"
+    Name        = "${var.project_name}-rds"
     Environment = "dev"
   }
 }
