@@ -83,7 +83,7 @@ variable "db_password" {
 
   # Solo para desarrollo.
   # Luego se reemplazará por un GitHub Secret.
-  default = "postgres123!"
+  default = "postgres"
 }
 
 variable "db_name" {
