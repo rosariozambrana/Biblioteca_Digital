@@ -19,13 +19,19 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   description = "CIDRs de las subnets públicas (una por AZ)."
   type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24"]
+  default = [
+    "10.0.1.0/24",
+    "10.0.2.0/24"
+  ]
 }
 
 variable "azs" {
   description = "Availability Zones a usar."
   type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
+  default = [
+    "us-east-1a",
+    "us-east-1b"
+  ]
 }
 
 variable "catalog_desired_count" {
@@ -47,48 +53,49 @@ variable "notifications_desired_count" {
 }
 
 variable "task_cpu" {
-  description = "CPU por tarea Fargate (256 = 0.25 vCPU)."
+  description = "CPU por tarea Fargate."
   type        = string
   default     = "256"
 }
 
 variable "task_memory" {
-  description = "Memoria por tarea Fargate en MB."
+  description = "Memoria por tarea Fargate."
   type        = string
   default     = "512"
 }
 
 variable "image_tag" {
-  description = "Tag de las imágenes en ECR."
+  description = "Tag de las imágenes Docker."
   type        = string
   default     = "latest"
 }
 
 variable "db_username" {
-  description = "Usuario de la base de datos PostgreSQL."
+  description = "Usuario de PostgreSQL."
   type        = string
   default     = "postgres"
 }
 
 variable "db_password" {
-  description = "Contraseña de la base de datos PostgreSQL."
+  description = "Contraseña de PostgreSQL."
   type        = string
   sensitive   = true
 }
 
 variable "db_name" {
-  description = "Nombre de la base de datos PostgreSQL."
+  description = "Nombre de la base de datos."
   type        = string
   default     = "biblioteca"
 }
 
 variable "db_instance_class" {
-  description = "Tipo de instancia RDS para PostgreSQL."
+  description = "Tipo de instancia RDS."
   type        = string
   default     = "db.t3.micro"
 }
 
 variable "acm_certificate_arn" {
-  description = "ARN del certificado SSL de ACM para el ALB (HTTPS)."
+  description = "ARN del certificado ACM."
   type        = string
+  sensitive   = true
 }

@@ -6,7 +6,7 @@ name: Terraform Plan
 
 on:
   pull_request:
-    branches: [main]
+    branches: [develop]
     paths:
       - 'terraform/**'
       - '.github/workflows/terraform-plan.yml'
@@ -16,7 +16,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # 🔹 Adaptado a tu proyecto biblioteca-digital
   TF_WORKING_DIR: terraform/option-b-ecs
   TF_STATE_KEY: biblioteca-digital/terraform.tfstate
   TF_LOCK_TABLE: biblioteca-digital-tflock
@@ -43,8 +42,65 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # 🔹 Adaptado: región tomada de secrets/vars para biblioteca-digital
           aws-region: ${{ vars.AWS_REGION }}
+
+      # Bootstrap backend (igual que deploy.yml)
+      - name: Bootstrap Terraform backend
+        run: |
+          set -euo pipefail
+          REGION="${{ vars.AWS_REGION }}"
+          BUCKET="${{ vars.TF_STATE_BUCKET }}"
+          TABLE="${TF_LOCK_TABLE}"
+
+          if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "→ Creando bucket $BUCKET"
+            if [[ "$REGION" == "us-east-1" ]]; then
+              aws s3api create-bucket \
+                --bucket "$BUCKET" \
+                --region "$REGION"
+            else
+              aws s3api create-bucket \
+                --bucket "$BUCKET" \
+                --region "$REGION" \
+                --create-bucket-configuration LocationConstraint="$REGION"
+            fi
+
+            aws s3api put-bucket-versioning \
+              --bucket "$BUCKET" \
+              --versioning-configuration Status=Enabled
+
+            aws s3api put-bucket-encryption \
+              --bucket "$BUCKET" \
+              --server-side-encryption-configuration \
+              '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+            aws s3api put-public-access-block \
+              --bucket "$BUCKET" \
+              --public-access-block-configuration \
+              'BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true'
+          else
+            echo "✔ Bucket $BUCKET ya existe"
+          fi
+
+          if ! aws dynamodb describe-table \
+            --table-name "$TABLE" \
+            --region "$REGION" >/dev/null 2>&1; then
+
+            echo "→ Creando tabla $TABLE"
+
+            aws dynamodb create-table \
+              --table-name "$TABLE" \
+              --attribute-definitions AttributeName=LockID,AttributeType=S \
+              --key-schema AttributeName=LockID,KeyType=HASH \
+              --billing-mode PAY_PER_REQUEST \
+              --region "$REGION"
+
+            aws dynamodb wait table-exists \
+              --table-name "$TABLE" \
+              --region "$REGION"
+          else
+            echo "✔ Tabla $TABLE ya existe"
+          fi
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -76,6 +132,9 @@ jobs:
       - name: Terraform plan
         working-directory: ${{ env.TF_WORKING_DIR }}
         id: plan
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.ACM_CERTIFICATE_ARN }}
         run: |
           set +e
           terraform plan -input=false -no-color -lock-timeout=5m \
@@ -100,28 +159,32 @@ jobs:
 
             const planPath = path.join('${{ env.TF_WORKING_DIR }}', 'plan_output.txt');
             let plan = '';
+
             try {
               plan = fs.readFileSync(planPath, 'utf8');
-            } catch (e) {
+            } catch {
               plan = '(no se pudo leer la salida del plan)';
             }
 
             const MAX = 60000;
             if (plan.length > MAX) {
               const half = Math.floor(MAX / 2);
-              plan = plan.slice(0, half) +
-                '\n\n... (truncado, ver logs del workflow para el plan completo) ...\n\n' +
+              plan =
+                plan.slice(0, half) +
+                '\n\n... (truncado) ...\n\n' +
                 plan.slice(-half);
             }
 
-            const icon = (s) => s === 'success' ? '✅' : s === 'failure' ? '❌' : '⚠️';
+            const icon = (s) =>
+              s === 'success' ? '✅' :
+              s === 'failure' ? '❌' : '⚠️';
 
             const body = [
               '### Terraform Plan',
               '',
-              `- ${icon(process.env.PLAN_FMT)} \`terraform fmt\``,
-              `- ${icon(process.env.PLAN_VALIDATE)} \`terraform validate\``,
-              `- ${icon(process.env.PLAN_RESULT)} \`terraform plan\``,
+              `- ${icon(process.env.PLAN_FMT)} terraform fmt`,
+              `- ${icon(process.env.PLAN_VALIDATE)} terraform validate`,
+              `- ${icon(process.env.PLAN_RESULT)} terraform plan`,
               '',
               '<details><summary>Plan output</summary>',
               '',
@@ -131,7 +194,7 @@ jobs:
               '',
               '</details>',
               '',
-              `*Commit: \`${context.payload.pull_request.head.sha.slice(0, 7)}\`*`,
+              `*Commit: \`${context.payload.pull_request.head.sha.slice(0,7)}\`*`
             ].join('\n');
 
             const marker = '<!-- terraform-plan-comment -->';
@@ -142,7 +205,8 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const existing = comments.find((c) => c.body && c.body.includes(marker));
+
+            const existing = comments.find(c => c.body?.includes(marker));
 
             if (existing) {
               await github.rest.issues.updateComment({

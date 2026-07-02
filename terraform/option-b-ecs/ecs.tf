@@ -7,11 +7,7 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-data "aws_caller_identity" "current" {}
-
 locals {
-  account_id          = data.aws_caller_identity.current.account_id
-  ecr_registry        = "${local.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
   catalog_image       = "${aws_ecr_repository.catalog.repository_url}:${var.image_tag}"
   loans_image         = "${aws_ecr_repository.loans.repository_url}:${var.image_tag}"
   notifications_image = "${aws_ecr_repository.notifications.repository_url}:${var.image_tag}"

@@ -1,3 +1,4 @@
+# IAM para ECS Tasks
 data "aws_iam_policy_document" "ecs_tasks_assume" {
   statement {
     actions = ["sts:AssumeRole"]
@@ -18,7 +19,6 @@ resource "aws_iam_role_policy_attachment" "task_execution_managed" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# mplementado: permisos adicionales para Service Discovery (Cloud Map)
 resource "aws_iam_policy" "ecs_service_discovery" {
   name        = "${var.project_name}-ecs-service-discovery"
   description = "Permite a ECS registrar servicios en Cloud Map"
@@ -27,8 +27,8 @@ resource "aws_iam_policy" "ecs_service_discovery" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = [
+        Effect = "Allow"
+        Action = [
           "servicediscovery:RegisterInstance",
           "servicediscovery:DeregisterInstance",
           "servicediscovery:GetService",
