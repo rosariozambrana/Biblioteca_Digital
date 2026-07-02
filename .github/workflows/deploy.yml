@@ -56,7 +56,6 @@ jobs:
 
       # -------------------------------------------------------------
       # 1. Bootstrap backend remoto: bucket S3 + tabla DynamoDB para lock.
-      #    Adaptado: nombres con prefijo biblioteca-digital
       # -------------------------------------------------------------
       - name: Bootstrap Terraform backend
         run: |
@@ -115,7 +114,6 @@ jobs:
 
       # -------------------------------------------------------------
       # 2. Apply targeted: SOLO los repos ECR.
-      #    Adaptado: repositorios catalog, loans, notifications
       # -------------------------------------------------------------
       - name: Terraform apply (ECR repos)
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -140,8 +138,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # -------------------------------------------------------------
-      # 3. Build & push con tag = github.sha (commit corto).
-      #    Adaptado: microservicios catalog, loans, notifications
+      # 3. Build & push con tag = github.sha.
       # -------------------------------------------------------------
       - name: Build & push catalog
         uses: docker/build-push-action@v6
@@ -184,10 +181,13 @@ jobs:
 
       # -------------------------------------------------------------
       # 4. Apply completo con image_tag=github.sha.
-      #    Adaptado: despliega toda la infra biblioteca-digital
+      #    Variables sensibles desde GitHub Secrets.
       # -------------------------------------------------------------
       - name: Terraform apply (infra completa)
         working-directory: ${{ env.TF_WORKING_DIR }}
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_acm_certificate_arn: ${{ secrets.ACM_CERTIFICATE_ARN }}
         run: |
           terraform apply -auto-approve -input=false \
             -var="image_tag=${{ github.sha }}" \
