@@ -116,7 +116,6 @@ jobs:
             -var="aws_region=${{ vars.AWS_REGION }}"
 
       # 🔹 Adaptado: borrar backend remoto solo si se pide explícitamente
-      # ⚠️ Podés quitar este bloque si no querés borrar el backend en futuros runs
       - name: Delete state backend (opcional)
         if: ${{ inputs.delete_state_backend }}
         run: |
