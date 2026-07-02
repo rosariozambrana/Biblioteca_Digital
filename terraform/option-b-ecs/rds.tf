@@ -19,7 +19,7 @@ resource "aws_security_group" "rds" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description = "PostgreSQL desde Catalog"
+    description = "PostgreSQL desde ECS"
 
     from_port = 5432
     to_port   = 5432
@@ -46,10 +46,13 @@ resource "aws_security_group" "rds" {
 
 # Instancia PostgreSQL
 resource "aws_db_instance" "postgres" {
-  identifier            = "${var.project_name}-db"
-  engine                = "postgres"
-  engine_version        = "15.5"
-  instance_class        = var.db_instance_class
+  identifier = "${var.project_name}-db"
+
+  engine         = "postgres"
+  engine_version = "15.5"
+
+  instance_class = var.db_instance_class
+
   allocated_storage     = 20
   max_allocated_storage = 100
 
@@ -65,13 +68,20 @@ resource "aws_db_instance" "postgres" {
 
   db_subnet_group_name = aws_db_subnet_group.main.name
 
-  publicly_accessible        = false
-  skip_final_snapshot        = true
-  deletion_protection        = false
-  backup_retention_period    = 7
-  multi_az                   = false
+  publicly_accessible = false
+  skip_final_snapshot = true
+  deletion_protection = false
+
+  # Compatible con cuentas Free Tier
+  backup_retention_period = 1
+
+  # Desarrollo
+  multi_az = false
+
   auto_minor_version_upgrade = true
-  monitoring_interval        = 60
+
+  # Deshabilitado para evitar requerir IAM Role de Enhanced Monitoring
+  monitoring_interval = 0
 
   tags = {
     Name        = "${var.project_name}-rds"
