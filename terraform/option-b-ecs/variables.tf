@@ -19,7 +19,7 @@ variable "vpc_cidr" {
 variable "public_subnet_cidrs" {
   description = "CIDRs de las subnets públicas (una por AZ)."
   type        = list(string)
-  default     = [
+  default = [
     "10.0.1.0/24",
     "10.0.2.0/24"
   ]
@@ -80,10 +80,6 @@ variable "db_password" {
   description = "Contraseña de PostgreSQL."
   type        = string
   sensitive   = true
-
-  # Solo para desarrollo.
-  # Luego se reemplazará por un GitHub Secret.
-  default = "postgres"
 }
 
 variable "db_name" {
@@ -99,7 +95,7 @@ variable "db_instance_class" {
 }
 
 variable "acm_certificate_arn" {
-  description = "ARN del certificado ACM (opcional)."
+  description = "ARN del certificado ACM."
   type        = string
-  default     = ""
+  sensitive   = true
 }
