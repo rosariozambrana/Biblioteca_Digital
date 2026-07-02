@@ -3,8 +3,7 @@
 # Tiene 2 jobs corriendo en paralelo:
 #   1. build       → lint + compila + tests de microservicios
 #   2. security    → escaneo de vulnerabilidades, secretos e IaC
-#
-# Ambos deben pasar antes de mergear a develop.
+
 name: CI
 
 on:
@@ -60,11 +59,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Gitleaks — scan secrets
+      # Escaneo de secretos
+      - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Dependencias
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -78,17 +79,19 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
-      - name: Trivy — scan filesystem
-        uses: aquasecurity/trivy-action@0.29.0
+      # Escaneo de vulnerabilidades
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0
         with:
           scan-type: fs
           scan-ref: .
+          format: table
           severity: CRITICAL,HIGH
           exit-code: "0"
-          format: table
 
-      - name: tfsec — scan Terraform
-        uses: aquasecurity/tfsec-action@v1.0.4
+      # Escaneo Terraform
+      - name: tfsec scan
+        uses: aquasecurity/tfsec-action@1
         with:
           working_directory: terraform/option-b-ecs
           soft_fail: true
