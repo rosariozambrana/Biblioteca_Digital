@@ -80,6 +80,7 @@ variable "db_password" {
   description = "Contraseña de PostgreSQL."
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "db_name" {
@@ -98,4 +99,5 @@ variable "acm_certificate_arn" {
   description = "ARN del certificado ACM."
   type        = string
   sensitive   = true
+  default     = ""
 }
