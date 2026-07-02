@@ -13,7 +13,7 @@ locals {
   notifications_image = "${aws_ecr_repository.notifications.repository_url}:${var.image_tag}"
 
   # COMPAÑEROS: Se agregó loans_image y database_url para todos los microservicios
-  database_url        = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
+  database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
 
   nats_dns_url = "nats://nats.${aws_service_discovery_private_dns_namespace.main.name}:4222"
 }
@@ -86,8 +86,8 @@ resource "aws_ecs_task_definition" "catalog" {
       { containerPort = 3000, protocol = "tcp" }
     ]
     environment = [
-      { name = "NATS_URL",          value = local.nats_dns_url },
-      { name = "DATABASE_URL",      value = local.database_url },
+      { name = "NATS_URL", value = local.nats_dns_url },
+      { name = "DATABASE_URL", value = local.database_url },
       { name = "CATALOG_HTTP_PORT", value = "3000" }
     ]
     logConfiguration = {
@@ -143,7 +143,7 @@ resource "aws_ecs_task_definition" "loans" {
     image     = local.loans_image
     essential = true
     environment = [
-      { name = "NATS_URL",     value = local.nats_dns_url },
+      { name = "NATS_URL", value = local.nats_dns_url },
       { name = "DATABASE_URL", value = local.database_url }
     ]
     logConfiguration = {
@@ -191,7 +191,7 @@ resource "aws_ecs_task_definition" "notifications" {
     image     = local.notifications_image
     essential = true
     environment = [
-      { name = "NATS_URL",     value = local.nats_dns_url },
+      { name = "NATS_URL", value = local.nats_dns_url },
       { name = "DATABASE_URL", value = local.database_url }
     ]
     logConfiguration = {
