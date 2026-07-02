@@ -49,7 +49,6 @@ resource "aws_db_instance" "postgres" {
   identifier = "${var.project_name}-db"
 
   engine         = "postgres"
-  engine_version = "15.5"
 
   instance_class = var.db_instance_class
 

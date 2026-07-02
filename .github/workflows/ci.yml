@@ -50,17 +50,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      ####################################################################
+      ############################################################
       # Gitleaks
-      ####################################################################
+      ############################################################
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      ####################################################################
+      ############################################################
       # Node
-      ####################################################################
+      ############################################################
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -73,22 +73,26 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
-      ####################################################################
+      ############################################################
       # Instalar Trivy
-      ####################################################################
+      ############################################################
       - name: Install Trivy
         run: |
           sudo apt-get update
           sudo apt-get install -y wget gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
-            gpg --dearmor | \
-            sudo tee /usr/share/keyrings/trivy.gpg >/dev/null
 
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | \
-            sudo tee /etc/apt/sources.list.d/trivy.list
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | gpg --dearmor \
+            | sudo tee /usr/share/keyrings/trivy.gpg >/dev/null
+
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list
 
           sudo apt-get update
           sudo apt-get install -y trivy
+
+      - name: Verify Trivy
+        run: trivy --version
 
       - name: Trivy scan
         run: |
@@ -96,12 +100,17 @@ jobs:
             --severity HIGH,CRITICAL \
             --exit-code 0
 
-      ####################################################################
-      # Instalar tfsec
-      ####################################################################
+      ############################################################
+      # Instalar tfsec (NUEVO MÉTODO)
+      ############################################################
       - name: Install tfsec
         run: |
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          wget -O tfsec https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-linux-amd64
+          chmod +x tfsec
+          sudo mv tfsec /usr/local/bin/
+
+      - name: Verify tfsec
+        run: tfsec --version
 
       - name: tfsec scan
         run: |
