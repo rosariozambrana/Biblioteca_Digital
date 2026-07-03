@@ -9,14 +9,28 @@ import { CatalogService } from './catalog.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/biblioteca',
-      entities: [Book], //TypeORM crea la tabla a partir de la entidad Book
-      synchronize: true, // autocrea la tabla
+
+      url:
+        process.env.DATABASE_URL ??
+        'postgres://postgres:postgres@localhost:5432/biblioteca',
+
+      ssl: process.env.DATABASE_URL
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
+
+      entities: [Book],
+
+      synchronize: true,
     }),
+
     TypeOrmModule.forFeature([Book]),
-    ClientsModule.register([ //conexión NATS
+
+    ClientsModule.register([
       {
         name: NATS_SERVICE,
         transport: Transport.NATS,
@@ -26,6 +40,7 @@ import { CatalogService } from './catalog.service';
       },
     ]),
   ],
+
   controllers: [CatalogController],
   providers: [CatalogService],
 })
