@@ -3,13 +3,8 @@ import { Logger } from '@nestjs/common';
 import { CatalogModule } from './catalog.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(CatalogModule); // crea la app de NestJS con el módulo CatalogModule
+  const app = await NestFactory.create(CatalogModule);
 
-  // Habilita CORS para que el frontend (S3/CloudFront) pueda consumir la API
-  // sin errores de "Cross-Origin Request Blocked" en el navegador.
-  // El origen '*' permite cualquier dominio durante desarrollo/pruebas.
-  // En producción se puede restringir al dominio del frontend:
-  // origin: 'https://mi-frontend.s3-website.us-east-1.amazonaws.com'
   app.enableCors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -18,8 +13,13 @@ async function bootstrap() {
 
   const port = Number(process.env.CATALOG_HTTP_PORT ?? 3000);
 
-  await app.listen(port); // levanta HTTP en el puerto 3000 o el definido en CATALOG_HTTP_PORT
-  Logger.log(`catalog HTTP escuchando en http://localhost:${port}`, 'Bootstrap');
+  // Escuchar en todas las interfaces para ECS/Fargate
+  await app.listen(port, '0.0.0.0');
+
+  Logger.log(
+    `Catalog HTTP escuchando en 0.0.0.0:${port}`,
+    'Bootstrap',
+  );
 }
 
 bootstrap();

@@ -9,13 +9,27 @@ import { LoansService } from './loans.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL ?? 'postgres://postgres:postgres@localhost:5432/biblioteca',
+
+      url:
+        process.env.DATABASE_URL ??
+        'postgres://postgres:postgres@localhost:5432/biblioteca',
+
+      ssl: process.env.DATABASE_URL
+        ? {
+            rejectUnauthorized: false,
+          }
+        : false,
+
       entities: [Book, Loan],
+
       synchronize: true,
     }),
+
     TypeOrmModule.forFeature([Book, Loan]),
+
     ClientsModule.register([
       {
         name: NATS_SERVICE,
@@ -26,6 +40,7 @@ import { LoansService } from './loans.service';
       },
     ]),
   ],
+
   controllers: [LoansController],
   providers: [LoansService],
 })

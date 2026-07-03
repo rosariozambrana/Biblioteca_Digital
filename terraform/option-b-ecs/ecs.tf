@@ -12,8 +12,8 @@ locals {
   loans_image         = "${aws_ecr_repository.loans.repository_url}:${var.image_tag}"
   notifications_image = "${aws_ecr_repository.notifications.repository_url}:${var.image_tag}"
 
-  # COMPAÑEROS: Se agregó loans_image y database_url para todos los microservicios
-  database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
+  # URL de PostgreSQL para todos los microservicios
+  database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}?sslmode=require"
 
   nats_dns_url = "nats://nats.${aws_service_discovery_private_dns_namespace.main.name}:4222"
 }
