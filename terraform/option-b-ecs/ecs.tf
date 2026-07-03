@@ -13,7 +13,7 @@ locals {
   notifications_image = "${aws_ecr_repository.notifications.repository_url}:${var.image_tag}"
 
   # URL de PostgreSQL para todos los microservicios
-  database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}?sslmode=require"
+  database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres.address}:5432/${var.db_name}"
 
   nats_dns_url = "nats://nats.${aws_service_discovery_private_dns_namespace.main.name}:4222"
 }
