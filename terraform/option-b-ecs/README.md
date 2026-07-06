@@ -4,50 +4,49 @@ Despliegue de los 2 microservicios, broker NATS y caché Redis en **AWS Fargate 
 
 ## Arquitectura desplegada
 
-```
                             Internet
                                 │
                                 ▼
                   ┌──────────────────────────┐
-                  │  Application Load        │  ← público (puerto 80)
+                  │  Application Load        │
                   │  Balancer (ALB)          │
                   └────────────┬─────────────┘
-                               │ :3000
+                               │ HTTP :80
                                ▼
-   ┌─────────────────────────────────────────────────────────┐
-   │                  VPC 10.0.0.0/16                        │
-   │                                                         │
-   │  Subnet pública AZ-a            Subnet pública AZ-b     │
-   │  ┌──────────────┐               ┌──────────────┐        │
-   │  │ orders task  │               │ orders task  │        │
-   │  │ (Fargate)    │               │ (Fargate)    │        │
-   │  └──┬───────┬───┘               └──┬───────┬───┘        │
-   │     │       │                      │       │            │
-   │     │       └─────────┬────────────┘       │            │
-   │     │                 ▼                    │            │
-   │     │       ┌───────────────────┐          │            │
-   │     │       │ ElastiCache Redis │ ◄────────┘            │
-   │     │       │ (cache.t3.micro)  │   persistencia órdenes│
-   │     │       └───────────────────┘                       │
-   │     │                                                   │
-   │     └────────────┐                                      │
-   │                  ▼                                      │
-   │       ┌───────────────┐                                 │
-   │       │   NATS task   │   ← descubierta vía             │
-   │       │   (Fargate)   │     nats.app.internal           │
-   │       └───────▲───────┘                                 │
-   │               │                                         │
-   │       ┌───────┴────────┐                                │
-   │       │ notifications  │                                │
-   │       │   (Fargate)    │                                │
-   │       └────────────────┘                                │
-   └─────────────────────────────────────────────────────────┘
-                            │
-                            └──► CloudWatch Logs
-                            └──► ECR (orders, notifications)
-                            └──► Cloud Map (DNS interno)
-```
-
+   ┌──────────────────────────────────────────────────────────────┐
+   │                  VPC 10.0.0.0/16                             │
+   │                                                              │
+   │  Subnet pública AZ-a             Subnet pública AZ-b         │
+   │  ┌────────────────────┐          ┌────────────────────┐      │
+   │  │  Catalog (Fargate) │          │  NAT Gateway       │      │
+   │  │      :3000         │          │                    │      │
+   │  └─────────┬──────────┘          └────────────────────┘      │
+   │            │                                                 │
+   │            │ Publica eventos                                 │
+   │            ▼                                                 │
+   │      ┌─────────────────┐                                     │
+   │      │   NATS Broker   │                                     │
+   │      │    (Fargate)    │                                     │
+   │      └───────┬─────────┘                                     │
+   │              │                                                │
+   │      ┌───────┴──────────────┐                                │
+   │      │                      │                                │
+   │      ▼                      ▼                                │
+   │ ┌───────────────┐     ┌──────────────────┐                   │
+   │ │ Loans         │     │ Notifications    │                   │
+   │ │ (Fargate)     │     │ (Fargate)        │                   │
+   │ └──────┬────────┘     └──────────────────┘                   │
+   │        │                                                    │
+   │        ▼                                                    │
+   │ ┌───────────────────────────────┐                           │
+   │ │ Amazon RDS PostgreSQL         │                           │
+   │ │ Base de datos Biblioteca      │                           │
+   │ └───────────────────────────────┘                           │
+   └──────────────────────────────────────────────────────────────┘
+                 │
+                 ├──► Amazon ECR (Catalog, Loans, Notifications, NATS)
+                 ├──► CloudWatch Logs
+                 └──► Cloud Map (DNS interno para microservicios)
 ## Recursos creados (por archivo)
 
 | Archivo | Recursos AWS |
